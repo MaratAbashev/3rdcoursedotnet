@@ -1,60 +1,55 @@
+using System.Collections.Concurrent;
+using FluentValidation;
+using Microsoft.AspNetCore.Mvc;
 using UserCRUD;
-using UserCRUD.Models;
+using UserCRUD.Api.Filters;
+using UserCRUD.Application.Models;
+using UserCRUD.Application.Services;
+using UserCRUD.Application.Validators;
+using UserCRUD.Domain.Abstractions;
+using UserCRUD.Domain.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddControllers();
+builder.Services.AddScoped<IUserService, UserService>();
+
+var userStorage  = new ConcurrentDictionary<Guid, CustomUser>();
+builder.Services.AddSingleton(userStorage);
+
+builder.Services.AddValidatorsFromAssemblyContaining<CreateUserRequestValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<UpdateUserRequestValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<LoginUserRequestValidator>();
+builder.Services.AddScoped<ValidationFilterAttribute<CreateUserRequest>>();
+builder.Services.AddScoped<ValidationFilterAttribute<UpdateUserRequest>>();
+builder.Services.AddScoped<ValidationFilterAttribute<LoginUserRequest>>();
 
 var app = builder.Build();
-var userStorage  = new Dictionary<Guid, CustomUser>();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-app.MapPost("/user/create", (UserRequest request) =>
+app.MapControllers();
+
+app.MapPost("/users", ([FromBody] ShowUsersRequest request) =>
 {
-    var newUser = new CustomUser
+    return request.UsersMode switch
     {
-        Id = Guid.NewGuid(),
-        Email = request.Email,
-        PasswordHash = request.Password.GetHashCode()
+        ShowUsersMode.ShowByCreationDate => Results.Ok(userStorage.Values.Where(u =>
+            u.CreatedAt >= request.From && u.CreatedAt <= request.To)),
+        ShowUsersMode.ShowByLastModificationDate => Results.Ok(
+            userStorage.Values.Where(u => u.UpdatedAt >= request.From && u.UpdatedAt <= request.To)),
+        _ => Results.BadRequest("Wrong user mode")
     };
-    while (!userStorage.TryAdd(newUser.Id, newUser))
-    {
-        var existingUser = userStorage[newUser.Id];
-        if (existingUser.Email == request.Email)
-            return Results.BadRequest("User already exists");
-        newUser.Id = Guid.NewGuid();
-    }
-    return Results.Ok(newUser);
-});
+})
+.WithTags("Common Operations")
+.WithName("GetUsers")
+.WithDescription("Get all users by time interval");
 
-app.MapDelete("/user/{id:Guid}/delete", (Guid id) => 
-    userStorage.Remove(id, out var user) 
-        ? Results.Ok((object?)user) 
-        : Results.NotFound());
 
-app.MapPut("/user/{id:guid}/update", (Guid id, UserRequest request) =>
-{
-    if (!userStorage.TryGetValue(id, out var user))
-        return Results.NotFound("User not found");
-    user.Email = request.Email;
-    user.PasswordHash = request.Password.GetHashCode();
-    return Results.Ok(user);
-});
-
-app.MapPost("/user/auth", (UserRequest request) =>
-{
-    var existingUser = userStorage.Values.FirstOrDefault(u => u.Email == request.Email);
-    if (existingUser == null)
-        return Results.BadRequest("User email is invalid");
-    return existingUser.PasswordHash != request.Password.GetHashCode() 
-        ? Results.BadRequest("Password does not match") 
-        : Results.Ok(userStorage[existingUser.Id]);
-});
-
-app.MapGet("/users", () => Results.Ok(userStorage.Values.OrderBy(u => u.Email)));
 
 app.Run();
