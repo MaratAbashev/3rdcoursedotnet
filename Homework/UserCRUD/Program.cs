@@ -50,6 +50,4 @@ app.MapPost("/users", ([FromBody] ShowUsersRequest request) =>
 .WithName("GetUsers")
 .WithDescription("Get all users by time interval");
 
-
-
 app.Run();

@@ -96,4 +96,87 @@ public class UserService(ConcurrentDictionary<Guid, CustomUser> userStorage) : I
             return Task.FromResult(Result.Failure(ex.Message));
         }
     }
+
+    public Task<Result<DateTime>> ShowUserMinRegistrationDateAsync()
+    {
+        try
+        {
+            return Task.FromResult(Result<DateTime>
+                .Success(userStorage
+                    .Values
+                    .Min(u => u.CreatedAt)));
+        }
+        catch (Exception ex)
+        {
+            return Task.FromResult(Result<DateTime>.Failure(ex.Message));
+        }
+    }
+    
+    public Task<Result<DateTime>> ShowUserMaxRegistrationDateAsync()
+    {
+        try
+        {
+            return Task.FromResult(Result<DateTime>
+                .Success(userStorage
+                    .Values
+                    .Max(u => u.CreatedAt)));
+        }
+        catch (Exception ex)
+        {
+            return Task.FromResult(Result<DateTime>.Failure(ex.Message));
+        }
+    }
+
+    public Task<Result<IEnumerable<CustomUser>>> ShowUsersSortedByDateAsync()
+    {
+        try
+        {
+            return Task.FromResult(Result<IEnumerable<CustomUser>>
+                .Success(userStorage
+                    .Values
+                    .OrderBy(u => u.CreatedAt)
+                    .ToList()));
+        }
+        catch (Exception ex)
+        {
+            return Task.FromResult(Result<IEnumerable<CustomUser>>.Failure(ex.Message));
+        }
+    }
+
+    public Task<Result<IEnumerable<CustomUser>>> ShowUsersByGenderAsync(bool isMale)
+    {
+        try
+        {
+            return isMale
+                ? Task.FromResult(Result<IEnumerable<CustomUser>>.Success(
+                    userStorage
+                        .Values
+                        .Where(u => u.IsMale)))
+                : Task.FromResult(Result<IEnumerable<CustomUser>>.Success(
+                    userStorage
+                        .Values
+                        .Where(u => !u.IsMale)));
+        }
+        catch (Exception ex)
+        {
+            return Task.FromResult(Result<IEnumerable<CustomUser>>.Failure(ex.Message));
+        }
+    }
+
+    public Task<Result<IEnumerable<CustomUser>>> ShowUserByIdAsync(int pageNumber, int pageSize)
+    {
+        try
+        {
+            return Task.FromResult(
+                Result<IEnumerable<CustomUser>>.Success(
+                    userStorage
+                        .Values
+                        .Skip((pageNumber - 1) * pageSize)
+                        .Take(pageSize)));
+        }
+        catch (Exception ex)
+        {
+            return Task.FromResult(Result<IEnumerable<CustomUser>>.Failure(ex.Message));
+        }
+    }
 }

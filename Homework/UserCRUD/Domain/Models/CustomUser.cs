@@ -7,4 +7,5 @@ public class CustomUser
     public int PasswordHash { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
+    public bool IsMale { get; set; }
 }
