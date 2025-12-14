@@ -80,20 +80,20 @@ public class UserService(ConcurrentDictionary<Guid, CustomUser> userStorage) : I
         }
     }
 
-    public Task<Result> LoginUserAsync(string email, string password)
+    public Task<Result<CustomUser>> LoginUserAsync(string email, string password)
     {
         try
         {
             var user = userStorage.Values.FirstOrDefault(u => u.Email == email);
             if (user == null)
-                return Task.FromResult(Result.Failure("Email or password is invalid", ErrorType.BadRequest));
+                return Task.FromResult(Result<CustomUser>.Failure("Email or password is invalid", ErrorType.BadRequest));
             return password.GetHashCode() == user.PasswordHash 
-                ? Task.FromResult(Result.Success()) 
-                : Task.FromResult(Result.Failure("Email or Password is invalid", ErrorType.BadRequest));
+                ? Task.FromResult(Result<CustomUser>.Success(user)) 
+                : Task.FromResult(Result<CustomUser>.Failure("Email or Password is invalid", ErrorType.BadRequest));
         }
         catch (Exception ex)
         {
-            return Task.FromResult(Result.Failure(ex.Message));
+            return Task.FromResult(Result<CustomUser>.Failure(ex.Message));
         }
     }
 

@@ -22,6 +22,6 @@ public class CreateUserRequestValidator:  AbstractValidator<CreateUserRequest>
             .NotEmpty()
             .WithMessage("Password is required")
             .Matches(@"^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{12,20}$")
-            .WithMessage("Password must be 5 to 20 characters long, contain at least 1 latin capital letter, case letter, one number and one special character.");
+            .WithMessage("Password must be 12 to 20 characters long, contain at least 1 latin capital letter, case letter, one number and one special character.");
     }
 }

@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
+using NotificationService;
 using UserCRUD;
 using UserCRUD.Api.Filters;
 using UserCRUD.Application.Models;
@@ -15,6 +16,10 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddControllers();
 builder.Services.AddScoped<IUserService, UserService>();
 
+builder.Logging.ClearProviders()
+    .AddConsole()
+    .SetMinimumLevel(LogLevel.Information);
+
 var userStorage  = new ConcurrentDictionary<Guid, CustomUser>();
 builder.Services.AddSingleton(userStorage);
 
@@ -25,6 +30,10 @@ builder.Services.AddScoped<ValidationFilterAttribute<CreateUserRequest>>();
 builder.Services.AddScoped<ValidationFilterAttribute<UpdateUserRequest>>();
 builder.Services.AddScoped<ValidationFilterAttribute<LoginUserRequest>>();
 
+builder.Services.AddGrpcClient<UserNotificationService.UserNotificationServiceClient>(o =>
+{
+    o.Address = new Uri("http://localhost:5278");
+});
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())

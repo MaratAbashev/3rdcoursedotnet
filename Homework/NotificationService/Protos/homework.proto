@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+option csharp_namespace = "NotificationService";
+
+package homework;
+
+// The greeting service definition.
+service UserNotificationService {
+  rpc NotifyUserEvent (UserEventRequest) returns (UserEventResponse);
+}
+
+message UserEventRequest {
+  string userId = 1;
+  EventType eventType = 2;
+}
+
+message UserEventResponse {
+  string userId = 1;
+  EventType eventType = 2;
+  string message = 3;
+  string timestamp = 4;
+}
+
+enum EventType {
+  Unknown = 0;
+  Created = 1;
+  Updated = 2;
+  Deleted = 3;
+  LoggedIn = 4;
+}
